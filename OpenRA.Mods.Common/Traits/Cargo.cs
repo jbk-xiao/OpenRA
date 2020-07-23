@@ -49,7 +49,7 @@ namespace OpenRA.Mods.Common.Traits
 		public readonly WDist LoadRange = WDist.FromCells(5);
 
 		[Desc("Which direction the passenger will face (relative to the transport) when unloading.")]
-		public readonly int PassengerFacing = 128;
+		public readonly WAngle PassengerFacing = new WAngle(512);
 
 		[Desc("Delay (in ticks) before continuing after loading a passenger.")]
 		public readonly int AfterLoadDelay = 8;
@@ -373,7 +373,7 @@ namespace OpenRA.Mods.Common.Traits
 				passengerFacing.Facing = facing.Value.Facing + Info.PassengerFacing;
 
 			foreach (var t in passenger.TraitsImplementing<Turreted>())
-				t.TurretFacing = facing.Value.Facing + Info.PassengerFacing;
+				t.TurretFacing = (facing.Value.Facing + Info.PassengerFacing).Facing;
 		}
 
 		public void Load(Actor self, Actor a)
@@ -479,25 +479,19 @@ namespace OpenRA.Mods.Common.Traits
 
 		void ITransformActorInitModifier.ModifyTransformActorInit(Actor self, TypeDictionary init)
 		{
-			init.Add(new RuntimeCargoInit(Passengers.ToArray()));
+			init.Add(new RuntimeCargoInit(Info, Passengers.ToArray()));
 		}
 	}
 
-	public class RuntimeCargoInit : IActorInit<Actor[]>, ISuppressInitExport
+	public class RuntimeCargoInit : ValueActorInit<Actor[]>, ISuppressInitExport
 	{
-		[FieldFromYamlKey]
-		readonly Actor[] value = { };
-		public RuntimeCargoInit() { }
-		public RuntimeCargoInit(Actor[] init) { value = init; }
-		public Actor[] Value { get { return value; } }
+		public RuntimeCargoInit(TraitInfo info, Actor[] value)
+			: base(info, value) { }
 	}
 
-	public class CargoInit : IActorInit<string[]>
+	public class CargoInit : ValueActorInit<string[]>
 	{
-		[FieldFromYamlKey]
-		readonly string[] value = { };
-		public CargoInit() { }
-		public CargoInit(string[] init) { value = init; }
-		public string[] Value { get { return value; } }
+		public CargoInit(TraitInfo info, string[] value)
+			: base(info, value) { }
 	}
 }

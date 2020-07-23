@@ -400,7 +400,7 @@ namespace OpenRA.Mods.Common.Traits
 	[RequireExplicitImplementation]
 	public interface IActorPreviewInitInfo : ITraitInfoInterface
 	{
-		IEnumerable<object> ActorPreviewInits(ActorInfo ai, ActorPreviewType type);
+		IEnumerable<ActorInit> ActorPreviewInits(ActorInfo ai, ActorPreviewType type);
 	}
 
 	public interface IMove
@@ -588,6 +588,13 @@ namespace OpenRA.Mods.Common.Traits
 			GetValue = getValue;
 			OnChange = onChange;
 		}
+	}
+
+	[RequireExplicitImplementation]
+	public interface INotifyEditorPlacementInfo : ITraitInfoInterface
+	{
+		object AddedToEditor(EditorActorPreview preview, World editorWorld);
+		void RemovedFromEditor(EditorActorPreview preview, World editorWorld, object data);
 	}
 
 	[RequireExplicitImplementation]

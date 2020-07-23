@@ -16,7 +16,7 @@ using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
 {
-	public class PluggableInfo : TraitInfo
+	public class PluggableInfo : TraitInfo, IEditorActorOptions
 	{
 		[Desc("Footprint cell offset where a plug can be placed.")]
 		public readonly CVec Offset = CVec.Zero;
@@ -32,6 +32,17 @@ namespace OpenRA.Mods.Common.Traits
 			"Value is the condition expression defining the requirements to place the plug.")]
 		public readonly Dictionary<string, BooleanExpression> Requirements = new Dictionary<string, BooleanExpression>();
 
+		[Desc("Options to display in the map editor.",
+			"Key is the plug type that the requirements applies to.",
+			"Value is the label that is displayed in the actor editor dropdown.")]
+		public readonly Dictionary<string, string> EditorOptions = new Dictionary<string, string>();
+
+		[Desc("Label to use for an empty plug socket.")]
+		public readonly string EmptyOption = "Empty";
+
+		[Desc("Display order for the dropdown in the map editor")]
+		public readonly int EditorDisplayOrder = 5;
+
 		[GrantedConditionReference]
 		public IEnumerable<string> LinterConditions { get { return Conditions.Values; } }
 
@@ -39,6 +50,28 @@ namespace OpenRA.Mods.Common.Traits
 		public IEnumerable<string> ConsumedConditions
 		{
 			get { return Requirements.Values.SelectMany(r => r.Variables).Distinct(); }
+		}
+
+		IEnumerable<EditorActorOption> IEditorActorOptions.ActorOptions(ActorInfo ai, World world)
+		{
+			if (!EditorOptions.Any())
+				yield break;
+
+			// Make sure the no-plug option is always available
+			EditorOptions[""] = EmptyOption;
+			yield return new EditorActorDropdown("Plug", EditorDisplayOrder, EditorOptions,
+				actor =>
+				{
+					var init = actor.GetInitOrDefault<PlugInit>(this);
+					return init != null ? init.Value : "";
+				},
+				(actor, value) =>
+				{
+					if (string.IsNullOrEmpty(value))
+						actor.RemoveInit<PlugInit>(this);
+					else
+						actor.ReplaceInit(new PlugInit(this, value), this);
+				});
 		}
 
 		public override object Create(ActorInitializer init) { return new Pluggable(init, this); }
@@ -58,9 +91,7 @@ namespace OpenRA.Mods.Common.Traits
 		{
 			Info = info;
 
-			var plugInit = init.GetValue<PlugsInit, Dictionary<CVec, string>>(info, new Dictionary<CVec, string>());
-			if (plugInit.ContainsKey(Info.Offset))
-				initialPlug = plugInit[Info.Offset];
+			initialPlug = init.GetValue<PlugInit, string>(info, null);
 
 			if (info.Requirements.Count > 0)
 			{
@@ -120,12 +151,9 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class PlugsInit : IActorInit<Dictionary<CVec, string>>
+	public class PlugInit : ValueActorInit<string>
 	{
-		[DictionaryFromYamlKey]
-		readonly Dictionary<CVec, string> value = new Dictionary<CVec, string>();
-		public PlugsInit() { }
-		public PlugsInit(Dictionary<CVec, string> init) { value = init; }
-		public Dictionary<CVec, string> Value { get { return value; } }
+		public PlugInit(TraitInfo info, string value)
+			: base(info, value) { }
 	}
 }

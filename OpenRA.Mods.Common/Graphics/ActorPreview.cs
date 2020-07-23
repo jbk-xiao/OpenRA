@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Primitives;
@@ -32,61 +33,54 @@ namespace OpenRA.Mods.Common.Graphics
 		public readonly WorldRenderer WorldRenderer;
 		public World World { get { return WorldRenderer.World; } }
 
-		readonly TypeDictionary dict;
+		readonly ActorReference reference;
 
 		public ActorPreviewInitializer(ActorInfo actor, WorldRenderer worldRenderer, TypeDictionary dict)
 		{
 			Actor = actor;
 			WorldRenderer = worldRenderer;
-			this.dict = dict;
+			reference = new ActorReference(actor.Name, dict);
 		}
 
-		public T GetOrDefault<T>(TraitInfo info) where T : IActorInit
+		public ActorPreviewInitializer(ActorReference actor, WorldRenderer worldRenderer)
 		{
-			return dict.GetOrDefault<T>();
+			Actor = worldRenderer.World.Map.Rules.Actors[actor.Type];
+			reference = actor;
+			WorldRenderer = worldRenderer;
 		}
 
-		public T Get<T>(TraitInfo info) where T : IActorInit
-		{
-			var init = GetOrDefault<T>(info);
-			if (init == null)
-				throw new InvalidOperationException("TypeDictionary does not contain instance of type `{0}`".F(typeof(T)));
-
-			return init;
-		}
-
-		public U GetValue<T, U>(TraitInfo info) where T : IActorInit<U>
-		{
-			return Get<T>(info).Value;
-		}
-
-		public U GetValue<T, U>(TraitInfo info, U fallback) where T : IActorInit<U>
-		{
-			var init = GetOrDefault<T>(info);
-			return init != null ? init.Value : fallback;
-		}
-
-		public bool Contains<T>(TraitInfo info) where T : IActorInit { return GetOrDefault<T>(info) != null; }
+		// Forward IActorInitializer queries to the actor reference
+		// ActorReference can't reference a World instance, which prevents it from implementing this directly.
+		public T GetOrDefault<T>(TraitInfo info) where T : ActorInit { return reference.GetOrDefault<T>(info); }
+		public T Get<T>(TraitInfo info) where T : ActorInit { return reference.Get<T>(info); }
+		public U GetValue<T, U>(TraitInfo info) where T : ValueActorInit<U> { return reference.GetValue<T, U>(info); }
+		public U GetValue<T, U>(TraitInfo info, U fallback) where T : ValueActorInit<U> { return reference.GetValue<T, U>(info, fallback); }
+		public bool Contains<T>(TraitInfo info) where T : ActorInit { return reference.Contains<T>(info); }
+		public T GetOrDefault<T>() where T : ActorInit, ISingleInstanceInit { return reference.GetOrDefault<T>(); }
+		public T Get<T>() where T : ActorInit, ISingleInstanceInit { return reference.Get<T>(); }
+		public U GetValue<T, U>() where T : ValueActorInit<U>, ISingleInstanceInit { return reference.GetValue<T, U>(); }
+		public U GetValue<T, U>(U fallback) where T : ValueActorInit<U>, ISingleInstanceInit { return reference.GetValue<T, U>(fallback); }
+		public bool Contains<T>() where T : ActorInit, ISingleInstanceInit { return reference.Contains<T>(); }
 
 		public Func<WRot> GetOrientation()
 		{
 			var facingInfo = Actor.TraitInfoOrDefault<IFacingInfo>();
 			if (facingInfo == null)
-				return () => WRot.Zero;
+				return () => WRot.None;
 
 			// Dynamic facing takes priority
-			var dynamicInit = dict.GetOrDefault<DynamicFacingInit>();
+			var dynamicInit = reference.GetOrDefault<DynamicFacingInit>();
 			if (dynamicInit != null)
 			{
 				// TODO: Account for terrain slope
 				var getFacing = dynamicInit.Value;
-				return () => WRot.FromFacing(getFacing());
+				return () => WRot.FromYaw(getFacing());
 			}
 
 			// Fall back to initial actor facing if an Init isn't available
-			var facingInit = dict.GetOrDefault<FacingInit>();
+			var facingInit = reference.GetOrDefault<FacingInit>();
 			var facing = facingInit != null ? facingInit.Value : facingInfo.GetInitialFacing();
-			var orientation = WRot.FromFacing(facing);
+			var orientation = WRot.FromYaw(facing);
 			return () => orientation;
 		}
 
@@ -97,22 +91,19 @@ namespace OpenRA.Mods.Common.Graphics
 				return () => WAngle.Zero;
 
 			// Dynamic facing takes priority
-			var dynamicInit = dict.GetOrDefault<DynamicFacingInit>();
+			var dynamicInit = reference.GetOrDefault<DynamicFacingInit>();
 			if (dynamicInit != null)
-			{
-				var getFacing = dynamicInit.Value;
-				return () => WAngle.FromFacing(getFacing());
-			}
+				return dynamicInit.Value;
 
 			// Fall back to initial actor facing if an Init isn't available
-			var facingInit = dict.GetOrDefault<FacingInit>();
-			var facing = WAngle.FromFacing(facingInit != null ? facingInit.Value : facingInfo.GetInitialFacing());
+			var facingInit = reference.GetOrDefault<FacingInit>();
+			var facing = facingInit != null ? facingInit.Value : facingInfo.GetInitialFacing();
 			return () => facing;
 		}
 
 		public DamageState GetDamageState()
 		{
-			var health = dict.GetOrDefault<HealthInit>();
+			var health = reference.GetOrDefault<HealthInit>();
 
 			if (health == null)
 				return DamageState.Undamaged;

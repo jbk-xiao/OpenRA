@@ -317,16 +317,20 @@ namespace OpenRA.Traits
 
 	public interface IFacing
 	{
-		int TurnSpeed { get; }
-		int Facing { get; set; }
+		WAngle TurnSpeed { get; }
+		WAngle Facing { get; set; }
+		WRot Orientation { get; }
 	}
 
-	public interface IFacingInfo : ITraitInfoInterface { int GetInitialFacing(); }
+	public interface IFacingInfo : ITraitInfoInterface { WAngle GetInitialFacing(); }
 
 	public interface ITraitInfoInterface { }
 
 	public abstract class TraitInfo : ITraitInfoInterface
 	{
+		// Value is set using reflection during TraitInfo creation
+		public readonly string InstanceName = null;
+
 		public abstract object Create(ActorInitializer init);
 	}
 
@@ -389,6 +393,13 @@ namespace OpenRA.Traits
 
 	[RequireExplicitImplementation]
 	public interface IRenderTerrain { void RenderTerrain(WorldRenderer wr, Viewport viewport); }
+
+	[RequireExplicitImplementation]
+	public interface ITerrainLighting
+	{
+		event Action<MPos> CellChanged;
+		float3 TintAt(WPos pos);
+	}
 
 	public interface IRenderAboveShroud
 	{

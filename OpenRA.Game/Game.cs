@@ -75,7 +75,7 @@ namespace OpenRA
 		static string TimestampedFilename(bool includemilliseconds = false)
 		{
 			var format = includemilliseconds ? "yyyy-MM-ddTHHmmssfffZ" : "yyyy-MM-ddTHHmmssZ";
-			return "OpenRA-" + DateTime.UtcNow.ToString(format, CultureInfo.InvariantCulture);
+			return ModData.Manifest.Id + "-" + DateTime.UtcNow.ToString(format, CultureInfo.InvariantCulture);
 		}
 
 		static void JoinInner(OrderManager om)
@@ -442,6 +442,7 @@ namespace OpenRA
 			PerfHistory.Items["render_world"].HasNormalTick = false;
 			PerfHistory.Items["render_widgets"].HasNormalTick = false;
 			PerfHistory.Items["render_flip"].HasNormalTick = false;
+			PerfHistory.Items["terrain_lighting"].HasNormalTick = false;
 
 			JoinLocal();
 
@@ -710,6 +711,7 @@ namespace OpenRA
 			PerfHistory.Items["render_world"].Tick();
 			PerfHistory.Items["render_widgets"].Tick();
 			PerfHistory.Items["render_flip"].Tick();
+			PerfHistory.Items["terrain_lighting"].Tick();
 		}
 
 		static void Loop()

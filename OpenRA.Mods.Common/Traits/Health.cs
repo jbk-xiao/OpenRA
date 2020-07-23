@@ -42,7 +42,7 @@ namespace OpenRA.Mods.Common.Traits
 			yield return new EditorActorSlider("Health", EditorHealthDisplayOrder, 0, 100, 5,
 				actor =>
 				{
-					var init = actor.Init<HealthInit>();
+					var init = actor.GetInitOrDefault<HealthInit>();
 					return init != null ? init.Value : 100;
 				},
 				(actor, value) => actor.ReplaceInit(new HealthInit((int)value)));
@@ -71,7 +71,7 @@ namespace OpenRA.Mods.Common.Traits
 			MaxHP = hp = info.HP > 0 ? info.HP : 1;
 
 			// Cast to long to avoid overflow when multiplying by the health
-			var healthInit = init.GetOrDefault<HealthInit>(info);
+			var healthInit = init.GetOrDefault<HealthInit>();
 			if (healthInit != null)
 				hp = (int)(healthInit.Value * (long)MaxHP / 100);
 
@@ -233,23 +233,14 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class HealthInit : IActorInit<int>
+	public class HealthInit : ValueActorInit<int>, ISingleInstanceInit
 	{
-		[FieldFromYamlKey]
-		readonly int value = 100;
-
 		readonly bool allowZero;
-		public HealthInit() { }
-		public HealthInit(int init)
-			: this(init, false) { }
 
-		public HealthInit(int init, bool allowZero)
-		{
-			this.allowZero = allowZero;
-			value = init;
-		}
+		public HealthInit(int value, bool allowZero = false)
+			: base(value) { this.allowZero = allowZero; }
 
-		public int Value
+		public override int Value
 		{
 			get
 			{

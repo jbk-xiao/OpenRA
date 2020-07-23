@@ -23,16 +23,16 @@ namespace OpenRA.Mods.Common.Traits
 		public readonly HashSet<string> AllowedTerrain = new HashSet<string>();
 
 		[Desc("Facing to use for actor previews (map editor, color picker, etc)")]
-		public readonly int PreviewFacing = 96;
+		public readonly WAngle PreviewFacing = new WAngle(384);
 
-		IEnumerable<object> IActorPreviewInitInfo.ActorPreviewInits(ActorInfo ai, ActorPreviewType type)
+		IEnumerable<ActorInit> IActorPreviewInitInfo.ActorPreviewInits(ActorInfo ai, ActorPreviewType type)
 		{
 			yield return new FacingInit(PreviewFacing);
 		}
 
 		public override object Create(ActorInitializer init) { return new Husk(init, this); }
 
-		public int GetInitialFacing() { return 128; }
+		public WAngle GetInitialFacing() { return new WAngle(512); }
 
 		public IReadOnlyDictionary<CPos, SubCell> OccupiedCells(ActorInfo info, CPos location, SubCell subCell = SubCell.Any)
 		{
@@ -68,21 +68,29 @@ namespace OpenRA.Mods.Common.Traits
 		[Sync]
 		public WPos CenterPosition { get; private set; }
 
-		[Sync]
-		public int Facing { get; set; }
+		WRot orientation;
 
-		public int TurnSpeed { get { return 0; } }
+		[Sync]
+		public WAngle Facing
+		{
+			get { return orientation.Yaw; }
+			set { orientation = orientation.WithYaw(value); }
+		}
+
+		public WRot Orientation { get { return orientation; } }
+
+		public WAngle TurnSpeed { get { return WAngle.Zero; } }
 
 		public Husk(ActorInitializer init, HuskInfo info)
 		{
 			this.info = info;
 			self = init.Self;
 
-			TopLeft = init.GetValue<LocationInit, CPos>(info);
-			CenterPosition = init.GetValue<CenterPositionInit, WPos>(info, init.World.Map.CenterOfCell(TopLeft));
-			Facing = init.GetValue<FacingInit, int>(info, 128);
+			TopLeft = init.GetValue<LocationInit, CPos>();
+			CenterPosition = init.GetValue<CenterPositionInit, WPos>(init.World.Map.CenterOfCell(TopLeft));
+			Facing = init.GetValue<FacingInit, WAngle>(info.GetInitialFacing());
 
-			dragSpeed = init.GetValue<HuskSpeedInit, int>(info, 0);
+			dragSpeed = init.GetValue<HuskSpeedInit, int>(0);
 			finalPosition = init.World.Map.CenterOfCell(TopLeft);
 
 			effectiveOwner = init.GetValue<EffectiveOwnerInit, Player>(info, self.Owner);
@@ -171,13 +179,9 @@ namespace OpenRA.Mods.Common.Traits
 		Player IEffectiveOwner.Owner { get { return effectiveOwner; } }
 	}
 
-	public class HuskSpeedInit : IActorInit<int>
+	public class HuskSpeedInit : ValueActorInit<int>, ISingleInstanceInit
 	{
-		[FieldFromYamlKey]
-		readonly int value = 0;
-
-		public HuskSpeedInit() { }
-		public HuskSpeedInit(int init) { value = init; }
-		public int Value { get { return value; } }
+		public HuskSpeedInit(int value)
+			: base(value) { }
 	}
 }

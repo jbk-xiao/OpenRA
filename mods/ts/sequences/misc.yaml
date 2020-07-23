@@ -211,6 +211,18 @@ explosion:
 	small_grey_explosion: xgrysml2
 	medium_grey_explosion: xgrymed1
 	large_grey_explosion: xgrymed2
+	droppod_explosion: droppod
+		Length: 8
+		Tick: 360
+	droppod2_explosion: droppod2
+		Length: 8
+		Tick: 360
+	droppody_explosion: droppody
+		Length: 8
+		Tick: 360
+	droppody2_explosion: droppody2
+		Length: 8
+		Tick: 360
 
 discus:
 	idle:
@@ -332,6 +344,7 @@ resources:
 		ShadowStart: 12
 		Offset: 0, -12, 1.5
 		ZRamp: 1
+		IgnoreWorldTint: true
 	tib01: tib01
 	tib02: tib02
 	tib03: tib03
@@ -358,6 +371,7 @@ resources:
 		ShadowStart: -1
 		Tick: 180
 		Offset: 0, -12, 2.5
+		IgnoreWorldTint: false
 
 veins:
 	idle: veinatac
@@ -440,6 +454,7 @@ icon:
 	ioncannon: ioncicon
 	hunterseeker: detnicon
 	emp: pulsicon
+	droppods: podsicon
 
 clustermissile:
 	up: mltimisl-placeholder # TODO: use voxel
@@ -655,3 +670,8 @@ typeglyphs:
 		Start: 3
 	structure:
 		Start: 4
+
+podring:
+	idle:
+		Frames: 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+		Length: *

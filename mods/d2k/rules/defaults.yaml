@@ -194,7 +194,7 @@
 	OwnerLostAction:
 		Action: Kill
 	Mobile:
-		TurnSpeed: 5
+		TurnSpeed: 20
 		Locomotor: vehicle
 		PauseOnCondition: notmobile
 	Selectable:
@@ -305,6 +305,7 @@
 	RevealsShroud:
 		Range: 3c768
 	Mobile:
+		AlwaysTurnInPlace: true
 		Locomotor: foot
 	Selectable:
 		Bounds: 24,24,0,-4

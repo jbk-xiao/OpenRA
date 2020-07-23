@@ -241,7 +241,7 @@
 	Mobile:
 		PauseOnCondition: being-captured
 		Locomotor: wheeled
-		TurnSpeed: 5
+		TurnSpeed: 20
 	Selectable:
 		Bounds: 24, 24
 	Targetable:
@@ -325,6 +325,7 @@
 		Range: 4c0
 	Mobile:
 		Speed: 56
+		AlwaysTurnInPlace: true
 		Locomotor: foot
 	Selectable:
 		Bounds: 18,20,0,-6
@@ -608,7 +609,7 @@
 		VTOL: true
 		LandableTerrainTypes: Clear, Rough, Road, Ore, Beach, Gems
 		Crushes: crate, mine, infantry
-		InitialFacing: 224
+		InitialFacing: 896
 		CanSlide: True
 	GpsDot:
 		String: Helicopter
@@ -684,7 +685,7 @@
 	CapturableProgressBar:
 	CapturableProgressBlink:
 	SpawnActorsOnSell:
-		ActorTypes: e1,e1,e1,tecn,tecn
+		ActorTypes: e1,e1,e1,tecn,tecn2
 	MustBeDestroyed:
 		RequiredForShortGame: true
 	GpsDot:
@@ -704,7 +705,7 @@
 ^ScienceBuilding:
 	Inherits: ^Building
 	SpawnActorsOnSell:
-		ActorTypes: e1,e1,e1,e1,tecn,tecn,tecn,tecn,tecn,tecn,tecn,tecn,tecn,tecn,e6,e6,e6,e6,e6,chan,chan,chan,chan
+		ActorTypes: e1,e1,e1,e1,tecn,tecn2,tecn,tecn2,tecn,tecn2,tecn,tecn2,tecn,tecn2,e6,e6,e6,e6,e6,chan,chan,chan,chan
 
 ^Defense:
 	Inherits: ^Building

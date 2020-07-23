@@ -50,7 +50,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 		{
 			var sequenceProvider = init.World.Map.Rules.Sequences;
 			var faction = init.GetValue<FactionInit, string>(this);
-			var ownerName = init.Get<OwnerInit>(this).InternalName;
+			var ownerName = init.Get<OwnerInit>().InternalName;
 			var image = GetImage(init.Actor, sequenceProvider, faction);
 			var palette = init.WorldRenderer.Palette(Palette ?? PlayerPalette + ownerName);
 
@@ -163,13 +163,13 @@ namespace OpenRA.Mods.Common.Traits.Render
 			if (facing == null)
 				return () => WAngle.Zero;
 
-			return () => WAngle.FromFacing(facing.Facing);
+			return () => facing.Facing;
 		}
 
 		public RenderSprites(ActorInitializer init, RenderSpritesInfo info)
 		{
 			Info = info;
-			faction = init.GetValue<FactionInit, string>(info, init.Self.Owner.Faction.InternalName);
+			faction = init.GetValue<FactionInit, string>(init.Self.Owner.Faction.InternalName);
 		}
 
 		public string GetImage(Actor self)

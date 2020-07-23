@@ -119,11 +119,11 @@ namespace OpenRA.Mods.Common.Traits
 			yield return new EditorActorDropdown("Stance", EditorStanceDisplayOrder, labels,
 				actor =>
 				{
-					var init = actor.Init<StanceInit>();
+					var init = actor.GetInitOrDefault<StanceInit>(this);
 					var stance = init != null ? init.Value : InitialStance;
 					return stances[(int)stance];
 				},
-				(actor, value) => actor.ReplaceInit(new StanceInit((UnitStance)stances.IndexOf(value))));
+				(actor, value) => actor.ReplaceInit(new StanceInit(this, (UnitStance)stances.IndexOf(value))));
 		}
 	}
 
@@ -183,7 +183,7 @@ namespace OpenRA.Mods.Common.Traits
 			var self = init.Self;
 			ActiveAttackBases = self.TraitsImplementing<AttackBase>().ToArray().Where(Exts.IsTraitEnabled);
 
-			stance = init.GetValue<StanceInit, UnitStance>(info, self.Owner.IsBot || !self.Owner.Playable ? info.InitialStanceAI : info.InitialStance);
+			stance = init.GetValue<StanceInit, UnitStance>(self.Owner.IsBot || !self.Owner.Playable ? info.InitialStanceAI : info.InitialStance);
 
 			PredictedStance = stance;
 
@@ -415,7 +415,7 @@ namespace OpenRA.Mods.Common.Traits
 				if (!armaments.Any())
 					continue;
 
-				if (!allowTurn && !ab.TargetInFiringArc(self, target, ab.Info.FacingTolerance))
+				if (!allowTurn && !ab.TargetInFiringArc(self, target, 4 * ab.Info.FacingTolerance))
 					continue;
 
 				// Evaluate whether we want to target this actor
@@ -445,13 +445,9 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class StanceInit : IActorInit<UnitStance>
+	public class StanceInit : ValueActorInit<UnitStance>, ISingleInstanceInit
 	{
-		[FieldFromYamlKey]
-		readonly UnitStance value = UnitStance.AttackAnything;
-
-		public StanceInit() { }
-		public StanceInit(UnitStance init) { value = init; }
-		public UnitStance Value { get { return value; } }
+		public StanceInit(TraitInfo info, UnitStance value)
+			: base(info, value) { }
 	}
 }

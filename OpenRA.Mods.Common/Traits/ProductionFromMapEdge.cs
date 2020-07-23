@@ -78,7 +78,7 @@ namespace OpenRA.Mods.Common.Traits
 			if (aircraftInfo != null)
 				pos += new WVec(0, 0, aircraftInfo.CruiseAltitude.Length);
 
-			var initialFacing = self.World.Map.FacingBetween(location.Value, destinations[0], 0);
+			var initialFacing = self.World.Map.FacingBetween(location.Value, destinations[0], WAngle.Zero);
 
 			self.World.AddFrameEndTask(w =>
 			{
@@ -110,13 +110,9 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class ProductionSpawnLocationInit : IActorInit<CPos>
+	public class ProductionSpawnLocationInit : ValueActorInit<CPos>
 	{
-		[FieldFromYamlKey]
-		readonly CPos value = CPos.Zero;
-
-		public ProductionSpawnLocationInit() { }
-		public ProductionSpawnLocationInit(CPos init) { value = init; }
-		public CPos Value { get { return value; } }
+		public ProductionSpawnLocationInit(TraitInfo info, CPos value)
+			: base(info, value) { }
 	}
 }

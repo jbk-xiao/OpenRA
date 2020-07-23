@@ -27,8 +27,11 @@ namespace OpenRA.Mods.Common.Projectiles
 		[Desc("Projectile speed in WDist / tick, two values indicate variable velocity.")]
 		public readonly WDist[] Speed = { new WDist(17) };
 
-		[Desc("Maximum offset at the maximum range.")]
+		[Desc("The maximum/constant/incremental inaccuracy used in conjunction with the InaccuracyType property.")]
 		public readonly WDist Inaccuracy = WDist.Zero;
+
+		[Desc("Controls the way inaccuracy is calculated. Possible values are 'Maximum' - scale from 0 to max with range, 'PerCellIncrement' - scale from 0 with range and 'Absolute' - use set value regardless of range.")]
+		public readonly InaccuracyType InaccuracyType = InaccuracyType.Maximum;
 
 		[Desc("Image to display.")]
 		public readonly string Image = null;
@@ -37,7 +40,7 @@ namespace OpenRA.Mods.Common.Projectiles
 		[Desc("Loop a randomly chosen sequence of Image from this list while this projectile is moving.")]
 		public readonly string[] Sequences = { "idle" };
 
-		[PaletteReference]
+		[PaletteReference("IsPlayerPalette")]
 		[Desc("The palette used to draw this projectile.")]
 		public readonly string Palette = "effect";
 
@@ -119,7 +122,7 @@ namespace OpenRA.Mods.Common.Projectiles
 		ContrailRenderable contrail;
 
 		[Sync]
-		WPos pos, target, source;
+		WPos pos, lastPos, target, source;
 
 		int length;
 		int ticks, smokeTicks;
@@ -147,10 +150,8 @@ namespace OpenRA.Mods.Common.Projectiles
 			target = args.PassiveTarget;
 			if (info.Inaccuracy.Length > 0)
 			{
-				var inaccuracy = Util.ApplyPercentageModifiers(info.Inaccuracy.Length, args.InaccuracyModifiers);
-				var range = Util.ApplyPercentageModifiers(args.Weapon.Range.Length, args.RangeModifiers);
-				var maxOffset = inaccuracy * (target - pos).Length / range;
-				target += WVec.FromPDF(world.SharedRandom, 2) * maxOffset / 1024;
+				var maxInaccuracyOffset = Util.GetProjectileInaccuracy(info.Inaccuracy.Length, info.InaccuracyType, args);
+				target += WVec.FromPDF(world.SharedRandom, 2) * maxInaccuracyOffset / 1024;
 			}
 
 			if (info.AirburstAltitude > WDist.Zero)
@@ -199,7 +200,7 @@ namespace OpenRA.Mods.Common.Projectiles
 			if (anim != null)
 				anim.Tick();
 
-			var lastPos = pos;
+			lastPos = pos;
 			pos = WPos.LerpQuadratic(source, target, angle, ticks, length);
 
 			// Check for walls or other blocking obstacles
@@ -286,7 +287,13 @@ namespace OpenRA.Mods.Common.Projectiles
 
 			world.AddFrameEndTask(w => w.Remove(this));
 
-			args.Weapon.Impact(Target.FromPos(pos), new WarheadArgs(args));
+			var warheadArgs = new WarheadArgs(args)
+			{
+				ImpactOrientation = new WRot(WAngle.Zero, Util.GetVerticalAngle(lastPos, pos), args.Facing),
+				ImpactPosition = pos,
+			};
+
+			args.Weapon.Impact(Target.FromPos(pos), warheadArgs);
 		}
 
 		bool AnyValidTargetsInRadius(World world, WPos pos, WDist radius, Actor firedBy, bool checkTargetType)

@@ -43,8 +43,8 @@ namespace OpenRA.Mods.Common.Traits
 		[Desc("Cursor to display when unable to (un)deploy the actor.")]
 		public readonly string DeployBlockedCursor = "deploy-blocked";
 
-		[Desc("Facing that the actor must face before deploying. Set to -1 to deploy regardless of facing.")]
-		public readonly int Facing = -1;
+		[Desc("Facing that the actor must face before deploying. Leave undefined to deploy regardless of facing.")]
+		public readonly WAngle? Facing = null;
 
 		[Desc("Play a randomly selected sound from this list when deploying.")]
 		public readonly string[] DeploySounds = null;
@@ -72,7 +72,7 @@ namespace OpenRA.Mods.Common.Traits
 			yield return new EditorActorCheckbox("Deployed", EditorDeployedDisplayOrder,
 				actor =>
 				{
-					var init = actor.Init<DeployStateInit>();
+					var init = actor.GetInitOrDefault<DeployStateInit>();
 					if (init != null)
 						return init.Value == DeployState.Deployed;
 
@@ -94,8 +94,6 @@ namespace OpenRA.Mods.Common.Traits
 	{
 		readonly Actor self;
 		readonly bool checkTerrainType;
-		readonly bool canTurn;
-		readonly IMove move;
 
 		DeployState deployState;
 		INotifyDeployTriggered[] notify;
@@ -109,9 +107,7 @@ namespace OpenRA.Mods.Common.Traits
 		{
 			self = init.Self;
 			checkTerrainType = info.AllowedTerrainTypes.Count > 0;
-			canTurn = self.Info.HasTraitInfo<IFacingInfo>();
-			move = self.TraitOrDefault<IMove>();
-			deployState = init.GetValue<DeployStateInit, DeployState>(info, DeployState.Undeployed);
+			deployState = init.GetValue<DeployStateInit, DeployState>(DeployState.Undeployed);
 		}
 
 		protected override void Created(Actor self)
@@ -119,27 +115,25 @@ namespace OpenRA.Mods.Common.Traits
 			notify = self.TraitsImplementing<INotifyDeployTriggered>().ToArray();
 			base.Created(self);
 
+			if (Info.Facing.HasValue && deployState != DeployState.Undeployed)
+			{
+				var facing = self.TraitOrDefault<IFacing>();
+				if (facing != null)
+					facing.Facing = Info.Facing.Value;
+			}
+
 			switch (deployState)
 			{
 				case DeployState.Undeployed:
 					OnUndeployCompleted();
 					break;
 				case DeployState.Deploying:
-					if (canTurn)
-						self.Trait<IFacing>().Facing = Info.Facing;
-
 					Deploy(true);
 					break;
 				case DeployState.Deployed:
-					if (canTurn)
-						self.Trait<IFacing>().Facing = Info.Facing;
-
 					OnDeployCompleted();
 					break;
 				case DeployState.Undeploying:
-					if (canTurn)
-						self.Trait<IFacing>().Facing = Info.Facing;
-
 					Undeploy(true);
 					break;
 			}
@@ -337,12 +331,9 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class DeployStateInit : IActorInit<DeployState>
+	public class DeployStateInit : ValueActorInit<DeployState>, ISingleInstanceInit
 	{
-		[FieldFromYamlKey]
-		readonly DeployState value = DeployState.Deployed;
-		public DeployStateInit() { }
-		public DeployStateInit(DeployState init) { value = init; }
-		public DeployState Value { get { return value; } }
+		public DeployStateInit(DeployState value)
+			: base(value) { }
 	}
 }

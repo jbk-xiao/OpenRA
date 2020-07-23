@@ -49,12 +49,16 @@ namespace OpenRA.Mods.Common.Activities
 
 		protected override void OnFirstRun(Actor self)
 		{
+			// The cargo might have become invalid while we were moving towards it.
+			if (cargo.IsDead || carryable.IsTraitDisabled || !cargo.AppearsFriendlyTo(self))
+				return;
+
 			if (carryall.ReserveCarryable(self, cargo))
 			{
 				// Fly to the target and wait for it to be locked for pickup
 				// These activities will be cancelled and replaced by Land once the target has been locked
 				QueueChild(new Fly(self, Target.FromActor(cargo)));
-				QueueChild(new FlyIdle(self, tickIdle: false));
+				QueueChild(new FlyIdle(self, idleTurn: false));
 			}
 		}
 
@@ -93,7 +97,7 @@ namespace OpenRA.Mods.Common.Activities
 					ChildActivity.Cancel(self);
 
 					var localOffset = carryall.OffsetForCarryable(self, cargo).Rotate(carryableBody.QuantizeOrientation(self, cargo.Orientation));
-					QueueChild(new Land(self, Target.FromActor(cargo), -carryableBody.LocalToWorld(localOffset), WAngle.FromFacing(carryableFacing.Facing)));
+					QueueChild(new Land(self, Target.FromActor(cargo), -carryableBody.LocalToWorld(localOffset), carryableFacing.Facing));
 
 					// Pause briefly before attachment for visual effect
 					if (delay > 0)

@@ -39,7 +39,7 @@ namespace OpenRA.Mods.Cnc.Traits.Render
 			var frame = init.GetValue<BodyAnimationFrameInit, uint>(this, 0);
 
 			yield return new ModelAnimation(model, () => WVec.Zero,
-				() => new[] { body.QuantizeOrientation(orientation(), facings) },
+				() => body.QuantizeOrientation(orientation(), facings),
 				() => false, () => frame, ShowShadow);
 		}
 	}
@@ -64,7 +64,7 @@ namespace OpenRA.Mods.Cnc.Traits.Render
 			var model = self.World.ModelCache.GetModelSequence(rv.Image, info.Sequence);
 			frames = model.Frames;
 			modelAnimation = new ModelAnimation(model, () => WVec.Zero,
-				() => new[] { body.QuantizeOrientation(self, self.Orientation) },
+				() => body.QuantizeOrientation(self, self.Orientation),
 				() => false, () => frame, info.ShowShadow);
 
 			rv.Add(modelAnimation);
@@ -95,13 +95,9 @@ namespace OpenRA.Mods.Cnc.Traits.Render
 		}
 	}
 
-	public class BodyAnimationFrameInit : IActorInit<uint>
+	public class BodyAnimationFrameInit : ValueActorInit<uint>
 	{
-		[FieldFromYamlKey]
-		readonly uint value = 0;
-
-		public BodyAnimationFrameInit() { }
-		public BodyAnimationFrameInit(uint init) { value = init; }
-		public uint Value { get { return value; } }
+		public BodyAnimationFrameInit(uint value)
+			: base(value) { }
 	}
 }
